@@ -285,7 +285,7 @@ export default function ScreeningModal({
 
   // Funções para obter informações do candidato
   const getCandidateName = () => {
-    return candidate.nome_completo || candidate.full_name || 'Candidato';
+    return candidate.NOMECOMPLETO || candidate.full_name || 'Candidato';
   };
 
   const getNomeSocial = () => {
