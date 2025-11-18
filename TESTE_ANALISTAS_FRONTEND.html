@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Analistas - Google Apps Script</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4285f4;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border-left: 4px solid #4285f4;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #loading {
+            display: none;
+            color: #4285f4;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            border-left: 4px solid #4caf50;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        #error {
+            margin-top: 20px;
+            padding: 20px;
+            background: #ffebee;
+            border-radius: 5px;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+            white-space: pre-wrap;
+        }
+        .hidden {
+            display: none;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .log-success { color: #4caf50; }
+        .log-error { color: #f44336; }
+        .log-info { color: #2196f3; }
+        .log-warn { color: #ff9800; }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste de Comunicação com Google Apps Script</h1>
+        <p>Esta página testa diretamente a comunicação com o Google Apps Script para buscar analistas.</p>
+
+        <div class="section">
+            <label for="scriptUrl">URL do Google Apps Script:</label>
+            <input
+                type="text"
+                id="scriptUrl"
+                placeholder="Cole aqui a URL do seu Google Apps Script"
+                value="https://script.google.com/macros/s/SEU_SCRIPT_ID/exec"
+            >
+            <p style="color: #666; font-size: 12px; margin-top: 5px;">
+                💡 A URL está no arquivo <code>.env</code> como <code>VITE_GOOGLE_SCRIPT_URL</code>
+            </p>
+        </div>
+
+        <div class="section">
+            <button onclick="testConnection()">1️⃣ Testar Conexão</button>
+            <button onclick="getAnalysts()">2️⃣ Buscar Analistas</button>
+            <button onclick="getUserRole()">3️⃣ Testar getUserRole</button>
+            <button onclick="clearResults()">🗑️ Limpar Resultados</button>
+        </div>
+
+        <div id="loading">⏳ Carregando...</div>
+        <div id="result" class="hidden"></div>
+        <div id="error" class="hidden"></div>
+
+        <div class="section">
+            <h3>📋 Instruções de Uso</h3>
+            <ol>
+                <li>Cole a URL do seu Google Apps Script no campo acima</li>
+                <li>Clique em "Testar Conexão" para verificar se o script está acessível</li>
+                <li>Clique em "Buscar Analistas" para ver os analistas retornados</li>
+                <li>Verifique os resultados abaixo</li>
+            </ol>
+
+            <h3>✅ O que esperar</h3>
+            <ul>
+                <li><strong>Teste de Conexão:</strong> Deve retornar status "OK"</li>
+                <li><strong>Buscar Analistas:</strong> Deve retornar lista de analistas com email, nome e role</li>
+            </ul>
+
+            <h3>❌ Problemas Comuns</h3>
+            <ul>
+                <li><strong>Erro CORS:</strong> Verifique se o script foi implantado como "Web app" com acesso "Qualquer pessoa"</li>
+                <li><strong>404 Not Found:</strong> URL do script incorreta</li>
+                <li><strong>Array vazio:</strong> Não há analistas cadastrados ou role está incorreta</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            console.log(message);
+            const resultDiv = document.getElementById('result');
+            resultDiv.classList.remove('hidden');
+
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = message;
+            resultDiv.appendChild(entry);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function clearResults() {
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+        }
+
+        function getScriptUrl() {
+            const url = document.getElementById('scriptUrl').value.trim();
+            if (!url || url === 'https://script.google.com/macros/s/SEU_SCRIPT_ID/exec') {
+                alert('Por favor, cole a URL do seu Google Apps Script primeiro!');
+                return null;
+            }
+            return url;
+        }
+
+        async function testConnection() {
+            clearResults();
+            const scriptUrl = getScriptUrl();
+            if (!scriptUrl) return;
+
+            showLoading();
+            log('🔄 Testando conexão com o Google Apps Script...', 'info');
+            log('📍 URL: ' + scriptUrl, 'info');
+
+            try {
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ action: 'test' })
+                });
+
+                log('📡 Status da resposta: ' + response.status, response.ok ? 'success' : 'error');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log('✅ Conexão bem-sucedida!', 'success');
+                log('📦 Resposta completa:', 'info');
+                log(JSON.stringify(data, null, 2), 'info');
+
+                if (data.success && data.data) {
+                    log('✅ Servidor está respondendo corretamente', 'success');
+                    log('🕐 Timestamp: ' + data.data.timestamp, 'info');
+                } else {
+                    log('⚠️ Resposta inesperada do servidor', 'warn');
+                }
+            } catch (error) {
+                log('❌ Erro na conexão: ' + error.message, 'error');
+                showError('Erro ao conectar: ' + error.message + '\n\nVerifique:\n1. Se a URL está correta\n2. Se o script foi implantado como "Web app"\n3. Se o acesso está configurado como "Qualquer pessoa"');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function getAnalysts() {
+            clearResults();
+            const scriptUrl = getScriptUrl();
+            if (!scriptUrl) return;
+
+            showLoading();
+            log('🔄 Buscando analistas...', 'info');
+            log('📍 URL: ' + scriptUrl, 'info');
+
+            try {
+                const payload = { action: 'getAnalysts' };
+                log('📤 Payload enviado:', 'info');
+                log(JSON.stringify(payload, null, 2), 'info');
+
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                log('📡 Status da resposta: ' + response.status, response.ok ? 'success' : 'error');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                log('📦 Resposta completa do servidor:', 'info');
+                log(JSON.stringify(result, null, 2), 'info');
+
+                // Analisar estrutura
+                log('\n🔍 ANÁLISE DA ESTRUTURA:', 'info');
+                log('• result.success: ' + result.success, 'info');
+                log('• result.data existe? ' + (result.data !== undefined), 'info');
+
+                // Tentar extrair analistas
+                let analysts = [];
+                if (result.success && result.data && result.data.analysts) {
+                    analysts = result.data.analysts;
+                    log('✅ Estrutura: { success: true, data: { analysts: [...] } }', 'success');
+                } else if (result.success && result.data && Array.isArray(result.data)) {
+                    analysts = result.data;
+                    log('✅ Estrutura: { success: true, data: [...] }', 'success');
+                } else if (result.data && result.data.analysts) {
+                    analysts = result.data.analysts;
+                    log('✅ Estrutura: { data: { analysts: [...] } }', 'success');
+                } else if (Array.isArray(result)) {
+                    analysts = result;
+                    log('✅ Estrutura: [...] (array direto)', 'success');
+                } else {
+                    log('⚠️ Estrutura não reconhecida', 'warn');
+                }
+
+                log('\n📊 RESULTADO:', 'info');
+                log('• Total de analistas: ' + analysts.length, analysts.length > 0 ? 'success' : 'warn');
+
+                if (analysts.length > 0) {
+                    log('\n👥 ANALISTAS ENCONTRADOS:', 'success');
+                    analysts.forEach((analyst, index) => {
+                        log(`\n${index + 1}. ${analyst.name || analyst.Nome || 'Nome não informado'}`, 'success');
+                        log('   Email: ' + (analyst.email || analyst.Email), 'info');
+                        log('   Role: ' + (analyst.role || analyst.Role), 'info');
+                        log('   ID: ' + (analyst.id || analyst.ID), 'info');
+                        log('   Active: ' + (analyst.active || analyst.Ativo), 'info');
+                    });
+                } else {
+                    log('\n⚠️ NENHUM ANALISTA ENCONTRADO!', 'warn');
+                    log('\nVerifique:', 'warn');
+                    log('1. Se há usuários na aba USUARIOS da planilha', 'warn');
+                    log('2. Se a coluna "Role" tem o valor "analista" (minúscula)', 'warn');
+                    log('3. Execute testGetAnalysts() no Google Apps Script', 'warn');
+                }
+
+            } catch (error) {
+                log('❌ Erro ao buscar analistas: ' + error.message, 'error');
+                showError('Erro: ' + error.message + '\n\n' + error.stack);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function getUserRole() {
+            clearResults();
+            const scriptUrl = getScriptUrl();
+            if (!scriptUrl) return;
+
+            const email = prompt('Digite o email para testar:', 'analista@email.com');
+            if (!email) return;
+
+            showLoading();
+            log('🔄 Testando getUserRole...', 'info');
+            log('📧 Email: ' + email, 'info');
+
+            try {
+                const payload = {
+                    action: 'getUserRole',
+                    email: email
+                };
+
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                log('📦 Resposta:', 'info');
+                log(JSON.stringify(result, null, 2), 'info');
+
+                if (result.success && result.data) {
+                    log('\n✅ Usuário encontrado:', 'success');
+                    log('Nome: ' + result.data.name, 'info');
+                    log('Email: ' + result.data.email, 'info');
+                    log('Role: ' + result.data.role, 'info');
+                } else {
+                    log('❌ Usuário não encontrado', 'error');
+                }
+
+            } catch (error) {
+                log('❌ Erro: ' + error.message, 'error');
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Auto-preencher URL do localStorage se disponível
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUrl = localStorage.getItem('scriptUrl');
+            if (savedUrl) {
+                document.getElementById('scriptUrl').value = savedUrl;
+            }
+
+            // Salvar URL quando mudar
+            document.getElementById('scriptUrl').addEventListener('change', (e) => {
+                localStorage.setItem('scriptUrl', e.target.value);
+            });
+        });
+    </script>
+</body>
+</html>
