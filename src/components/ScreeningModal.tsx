@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 interface Candidate {
   id: string;
   full_name?: string;
-  nome_completo?: string;
+  NOMECOMPLETO?: string;
   registration_number?: string;
   CPF?: string;
   NOMESOCIAL?: string;
