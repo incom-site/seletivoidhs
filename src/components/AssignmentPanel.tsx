@@ -226,7 +226,15 @@ function AssignmentPanel({ adminId, onAssignmentComplete }: AssignmentPanelProps
                       <div className="flex-1">
                         <div className="font-semibold text-gray-800">{candidate.NOMECOMPLETO || candidate.full_name || candidate.nome_completo || 'Nome não informado'}</div>
                         <div className="text-sm text-gray-600 mt-1">
-                          CPF: {candidate.CPF || candidate.cpf || candidate.cpf_numero || 'Não informado'} • Área: {candidate.AREAATUACAO || candidate.area || candidate.Area || 'Não informada'}
+                          <div>CPF: {candidate.CPF || candidate.cpf || candidate.cpf_numero || 'Não informado'} • Área: {candidate.AREAATUACAO || candidate.area || candidate.Area || 'Não informada'}</div>
+                          {(candidate.CARGOADMIN || candidate.CARGOASSIS) && (
+                            <div className="mt-1">
+                              <span className="font-medium">Cargos:</span>
+                              {candidate.CARGOADMIN && <span className="ml-1">Admin: {candidate.CARGOADMIN}</span>}
+                              {candidate.CARGOADMIN && candidate.CARGOASSIS && <span className="mx-1">•</span>}
+                              {candidate.CARGOASSIS && <span>Assis: {candidate.CARGOASSIS}</span>}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

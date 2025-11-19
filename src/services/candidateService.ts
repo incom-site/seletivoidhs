@@ -114,21 +114,30 @@ class GoogleSheetsService {
     }
 
     return candidatesArray.map((candidate: any, index: number) => {
-      // Garantir ID único: usar CPF ou gerar um ID baseado no índice
-      const candidateId = candidate.CPF || candidate.id || `candidate_${index}_${Date.now()}`;
+      const cpf = candidate.CPF || candidate.cpf || '';
+      const candidateId = cpf ? `CPF_${cpf.replace(/\D/g, '')}` : (candidate.id || `candidate_${index}_${Date.now()}`);
+
+      const assignedToRaw = candidate.assigned_to || candidate.Analista || '';
+      const assignedTo = (assignedToRaw && assignedToRaw.trim() !== '' && assignedToRaw !== 'null' && assignedToRaw !== 'undefined')
+        ? assignedToRaw.trim()
+        : null;
 
       const normalized: any = {
         ...candidate,
         id: candidateId,
         registration_number: candidate.CPF || candidate.registration_number,
         name: candidate.NOMECOMPLETO || candidate.name,
+        NOMECOMPLETO: candidate.NOMECOMPLETO || candidate.name,
+        CPF: candidate.CPF || candidate.cpf,
+        AREAATUACAO: candidate.AREAATUACAO || candidate.area || candidate.Area,
+        CARGOADMIN: candidate.CARGOADMIN || candidate.cargo_administrativo || null,
+        CARGOASSIS: candidate.CARGOASSIS || candidate.cargo_assistencial || null,
 
         status: (candidate.Status || candidate.status || 'pendente').toLowerCase(),
         Status: candidate.Status || candidate.status || 'pendente',
 
-        // CORREÇÃO: Mapear assigned_to e Analista corretamente
-        assigned_to: candidate.assigned_to || candidate.Analista || null,
-        Analista: candidate.Analista || candidate.assigned_to || null,
+        assigned_to: assignedTo,
+        Analista: assignedTo,
         assigned_at: candidate.assigned_at || null,
         assigned_by: candidate.assigned_by || null,
 
@@ -289,7 +298,14 @@ export const candidateService = {
       const allData = await sheetsService.getCandidates();
       console.log('📊 [getUnassignedCandidates] Total de candidatos:', allData.length);
 
-      const unassignedData = allData.filter(item => !item.assigned_to);
+      const unassignedData = allData.filter(item => {
+        const assignedTo = item.assigned_to || item.Analista;
+        const isUnassigned = !assignedTo || assignedTo === '' || assignedTo === 'null' || assignedTo === 'undefined';
+        if (isUnassigned && allData.indexOf(item) < 3) {
+          console.log(`✅ Candidato não alocado [${allData.indexOf(item) + 1}]:`, item.NOMECOMPLETO, '| assigned_to:', item.assigned_to, '| Analista:', item.Analista);
+        }
+        return isUnassigned;
+      });
       console.log('📊 [getUnassignedCandidates] Candidatos não alocados:', unassignedData.length);
 
       // Verificar IDs duplicados
