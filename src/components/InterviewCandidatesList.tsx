@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Loader2, UserPlus } from 'lucide-react';import { useState, useEffect } from 'react';
 import { Calendar, Loader2, UserPlus } from 'lucide-react';
 import type { Candidate } from '../types/candidate';
 import { useAuth } from '../contexts/AuthContext';
