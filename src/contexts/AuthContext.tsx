@@ -76,41 +76,66 @@ class GoogleSheetsService {
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
+    console.log('═'.repeat(60));
+    console.log('🔎 getUserByEmail - INICIANDO');
+    console.log('📧 Email solicitado:', email);
+    console.log('═'.repeat(60));
+
     const result = await this.fetchData('getUserRole', { email });
     console.log('📥 getUserByEmail - Resultado COMPLETO:', JSON.stringify(result, null, 2));
 
-    if (result && result.success && result.data) {
-      // Google Apps Script retorna { success: true, data: { role: ..., user: {...} } }
-      const userRoleData = result.data;
-      console.log('📦 getUserByEmail - Data extraído:', JSON.stringify(userRoleData, null, 2));
-
-      // Extrair o objeto user de dentro de data
-      const userData = userRoleData.user;
-
-      if (!userData) {
-        console.error('❌ getUserByEmail - user não encontrado em data');
-        return null;
-      }
-
-      console.log('👤 getUserByEmail - userData extraído:', JSON.stringify(userData, null, 2));
-
-      const user = {
-        id: userData.email,
-        email: userData.email,
-        name: userData.name || userData.nome || userData.email,
-        role: userData.role,
-        active: true,
-        password: ''
-      };
-
-      console.log('✅ getUserByEmail - User FINAL:', JSON.stringify(user, null, 2));
-      console.log('🎭 getUserByEmail - ROLE:', user.role, '(tipo:', typeof user.role, ')');
-
-      return user;
+    // Verificar estrutura do resultado
+    if (!result) {
+      console.error('❌ Resultado é null ou undefined');
+      return null;
     }
 
-    console.error('❌ getUserByEmail - Sem resultado válido');
-    return null;
+    if (!result.success) {
+      console.error('❌ result.success é false');
+      console.error('   Error:', result.error);
+      return null;
+    }
+
+    if (!result.data) {
+      console.error('❌ result.data é null ou undefined');
+      console.error('   Isso significa que getUserRole retornou { role: null, user: null }');
+      console.error('   Possíveis causas:');
+      console.error('   1. Email não encontrado na planilha USUARIOS');
+      console.error('   2. Usuário está inativo');
+      console.error('   3. Erro ao ler a planilha');
+      return null;
+    }
+
+    // Google Apps Script retorna { success: true, data: { role: ..., user: {...} } }
+    const userRoleData = result.data;
+    console.log('📦 getUserByEmail - Data extraído:', JSON.stringify(userRoleData, null, 2));
+
+    // Verificar se user existe em data
+    if (!userRoleData.user) {
+      console.error('❌ userRoleData.user não encontrado');
+      console.error('   Data recebido:', JSON.stringify(userRoleData, null, 2));
+      console.error('   Verifique se o usuário existe na planilha USUARIOS');
+      console.error('   Email buscado:', email);
+      return null;
+    }
+
+    const userData = userRoleData.user;
+    console.log('👤 getUserByEmail - userData extraído:', JSON.stringify(userData, null, 2));
+
+    const user = {
+      id: userData.email,
+      email: userData.email,
+      name: userData.name || userData.nome || userData.email,
+      role: userData.role,
+      active: true,
+      password: ''
+    };
+
+    console.log('✅ getUserByEmail - User FINAL:', JSON.stringify(user, null, 2));
+    console.log('🎭 getUserByEmail - ROLE:', user.role, '(tipo:', typeof user.role, ')');
+    console.log('═'.repeat(60));
+
+    return user;
   }
 
   async getUserById(id: string): Promise<User | null> {
