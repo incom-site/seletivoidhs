@@ -82,12 +82,19 @@ function AssignmentPanel({ adminId, onAssignmentComplete }: AssignmentPanelProps
   }
 
   function toggleCandidate(id: string) {
+    console.log('toggleCandidate chamado para ID:', id);
+    console.log('Estado atual de selectedCandidates:', Array.from(selectedCandidates));
+
     const newSelection = new Set(selectedCandidates);
     if (newSelection.has(id)) {
       newSelection.delete(id);
+      console.log('Removendo ID:', id);
     } else {
       newSelection.add(id);
+      console.log('Adicionando ID:', id);
     }
+
+    console.log('Novo estado de selectedCandidates:', Array.from(newSelection));
     setSelectedCandidates(newSelection);
   }
 
@@ -199,7 +206,10 @@ function AssignmentPanel({ adminId, onAssignmentComplete }: AssignmentPanelProps
                 {unassignedCandidates.map(candidate => (
                   <div
                     key={candidate.id}
-                    onClick={() => toggleCandidate(candidate.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCandidate(candidate.id);
+                    }}
                     className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                       selectedCandidates.has(candidate.id)
                         ? 'border-blue-500 bg-blue-50'
@@ -210,13 +220,13 @@ function AssignmentPanel({ adminId, onAssignmentComplete }: AssignmentPanelProps
                       <input
                         type="checkbox"
                         checked={selectedCandidates.has(candidate.id)}
-                        onChange={() => toggleCandidate(candidate.id)}
-                        className="mt-1"
+                        readOnly
+                        className="mt-1 pointer-events-none"
                       />
                       <div className="flex-1">
-                        <div className="font-semibold text-gray-800">{candidate.name}</div>
+                        <div className="font-semibold text-gray-800">{candidate.NOMECOMPLETO || candidate.full_name || candidate.nome_completo || 'Nome não informado'}</div>
                         <div className="text-sm text-gray-600 mt-1">
-                          CPF: {candidate.registration_number} • Área: {candidate.AREAATUACAO}
+                          CPF: {candidate.CPF || candidate.cpf || candidate.cpf_numero || 'Não informado'} • Área: {candidate.AREAATUACAO || candidate.area || candidate.Area || 'Não informada'}
                         </div>
                       </div>
                     </div>
@@ -333,3 +343,4 @@ function AssignmentPanel({ adminId, onAssignmentComplete }: AssignmentPanelProps
 }
 
 export default AssignmentPanel;
+
