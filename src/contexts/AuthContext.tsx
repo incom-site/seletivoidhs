@@ -34,44 +34,58 @@ function normalizeRole(role: string): 'admin' | 'analista' | 'entrevistador' {
 }
 
 async function getUserByEmail(email: string): Promise<User | null> {
-  console.log('═'.repeat(60));
-  console.log('🔎 [AuthContext] Buscando usuário:', email);
-  console.log('═'.repeat(60));
+  try {
+    console.log('═'.repeat(60));
+    console.log('🔎 [AuthContext] Buscando usuário:', email);
+    console.log('═'.repeat(60));
 
-  const result = await googleSheetsService.getUserRole(email);
-  console.log('📥 [AuthContext] Resposta:', JSON.stringify(result, null, 2));
+    const result = await googleSheetsService.getUserRole(email);
+    console.log('📥 [AuthContext] Resposta completa:', JSON.stringify(result, null, 2));
 
-  if (!result || !result.success) {
-    console.error('❌ [AuthContext] Falha na busca:', result?.error);
-    return null;
+    if (!result) {
+      console.error('❌ [AuthContext] Resultado null/undefined');
+      return null;
+    }
+
+    if (!result.success) {
+      console.error('❌ [AuthContext] Falha na busca:', result.error);
+      return null;
+    }
+
+    if (!result.data) {
+      console.error('❌ [AuthContext] Sem dados retornados');
+      return null;
+    }
+
+    const userRoleData = result.data;
+    console.log('📦 [AuthContext] UserRoleData:', JSON.stringify(userRoleData, null, 2));
+
+    const userData = userRoleData.user;
+
+    if (!userData) {
+      console.error('❌ [AuthContext] Usuário não encontrado em result.data.user');
+      return null;
+    }
+
+    console.log('👤 [AuthContext] UserData bruto:', JSON.stringify(userData, null, 2));
+
+    const user: User = {
+      id: userData.email || userData.Email,
+      email: userData.email || userData.Email,
+      name: userData.name || userData.Nome || userData.email || userData.Email,
+      role: normalizeRole(userData.role || userData.Role),
+      active: true
+    };
+
+    console.log('✅ [AuthContext] Usuário processado:', JSON.stringify(user, null, 2));
+    console.log('🎭 [AuthContext] Role normalizado:', user.role);
+    console.log('═'.repeat(60));
+
+    return user;
+  } catch (error) {
+    console.error('❌ [AuthContext] Erro ao buscar usuário:', error);
+    throw error;
   }
-
-  if (!result.data) {
-    console.error('❌ [AuthContext] Sem dados retornados');
-    return null;
-  }
-
-  const userRoleData = result.data;
-  const userData = userRoleData.user;
-
-  if (!userData) {
-    console.error('❌ [AuthContext] Usuário não encontrado');
-    return null;
-  }
-
-  const user: User = {
-    id: userData.email || userData.Email,
-    email: userData.email || userData.Email,
-    name: userData.name || userData.Nome || userData.email || userData.Email,
-    role: normalizeRole(userData.role || userData.Role),
-    active: true
-  };
-
-  console.log('✅ [AuthContext] Usuário processado:', JSON.stringify(user, null, 2));
-  console.log('🎭 [AuthContext] Role normalizado:', user.role);
-  console.log('═'.repeat(60));
-
-  return user;
 }
 
 async function getUserById(id: string): Promise<User | null> {
