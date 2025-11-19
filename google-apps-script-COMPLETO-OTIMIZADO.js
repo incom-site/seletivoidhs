@@ -642,13 +642,21 @@ function getUserRole(params) {
         return { role: null, user: null };
       }
 
+      // CRÍTICO: Normalizar role (remover espaços, lowercase)
+      const rawRole = String(values[i][roleCol] || 'analista').trim().toLowerCase();
+
       const user = {
         id: userEmail,
         email: userEmail,
         name: values[i][nameCol] || userEmail,
-        role: values[i][roleCol] || 'analyst',
+        role: rawRole,
         active: isActive
       };
+
+      Logger.log('✅ getUserRole - Usuário encontrado:');
+      Logger.log('   Email: ' + user.email);
+      Logger.log('   Role raw: "' + values[i][roleCol] + '"');
+      Logger.log('   Role normalizado: "' + rawRole + '"');
 
       return { role: user.role, user: user };
     }
@@ -676,12 +684,13 @@ function getAnalysts(params) {
     const role = String(values[i][roleCol] || '').trim().toLowerCase();
     const isActive = activeCol >= 0 ? (values[i][activeCol] === true || values[i][activeCol] === 'TRUE' || values[i][activeCol] === 'Sim') : true;
 
-    if ((role === 'analyst' || role === 'admin') && isActive) {
+    // Aceitar tanto 'analista' quanto 'analyst' (português e inglês)
+    if ((role === 'analista' || role === 'analyst' || role === 'admin') && isActive) {
       analysts.push({
         id: values[i][emailCol],
         email: values[i][emailCol],
         name: values[i][nameCol] || values[i][emailCol],
-        role: values[i][roleCol]
+        role: role // Role já normalizado
       });
     }
   }

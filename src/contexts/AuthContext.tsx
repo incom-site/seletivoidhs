@@ -79,10 +79,20 @@ class GoogleSheetsService {
     const result = await this.fetchData('getUserRole', { email });
     console.log('📥 getUserByEmail - Resultado COMPLETO:', JSON.stringify(result, null, 2));
 
-    if (result && !result.error) {
-      // Google Apps Script retorna { success: true, data: {...} }
-      const userData = result.data || result;
-      console.log('📦 getUserByEmail - Dados extraídos:', JSON.stringify(userData, null, 2));
+    if (result && result.success && result.data) {
+      // Google Apps Script retorna { success: true, data: { role: ..., user: {...} } }
+      const userRoleData = result.data;
+      console.log('📦 getUserByEmail - Data extraído:', JSON.stringify(userRoleData, null, 2));
+
+      // Extrair o objeto user de dentro de data
+      const userData = userRoleData.user;
+
+      if (!userData) {
+        console.error('❌ getUserByEmail - user não encontrado em data');
+        return null;
+      }
+
+      console.log('👤 getUserByEmail - userData extraído:', JSON.stringify(userData, null, 2));
 
       const user = {
         id: userData.email,
@@ -107,10 +117,20 @@ class GoogleSheetsService {
     const result = await this.fetchData('getUserRole', { email: id });
     console.log('📥 getUserById - Resultado COMPLETO:', JSON.stringify(result, null, 2));
 
-    if (result && !result.error) {
-      // Google Apps Script retorna { success: true, data: {...} }
-      const userData = result.data || result;
-      console.log('📦 getUserById - Dados extraídos:', JSON.stringify(userData, null, 2));
+    if (result && result.success && result.data) {
+      // Google Apps Script retorna { success: true, data: { role: ..., user: {...} } }
+      const userRoleData = result.data;
+      console.log('📦 getUserById - Data extraído:', JSON.stringify(userRoleData, null, 2));
+
+      // Extrair o objeto user de dentro de data
+      const userData = userRoleData.user;
+
+      if (!userData) {
+        console.error('❌ getUserById - user não encontrado em data');
+        return null;
+      }
+
+      console.log('👤 getUserById - userData extraído:', JSON.stringify(userData, null, 2));
 
       const user = {
         id: userData.email,
