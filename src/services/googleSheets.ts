@@ -1,4 +1,9 @@
-const SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwbr9Vm-EJxPTxGEP12UtwWfeKTGU1LsCjnHxQzkY8a9AOOozLNeDKGcflIknT5_FOq/exec';
+const SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
+
+if (!SCRIPT_URL) {
+  console.error('ERRO CRÍTICO: VITE_GOOGLE_SCRIPT_URL não configurada no .env');
+}
+
 interface GoogleSheetsResponse {
   success: boolean;
   data?: any;
@@ -8,9 +13,14 @@ interface GoogleSheetsResponse {
 
 async function makeRequest(action: string, params: any = {}): Promise<GoogleSheetsResponse> {
   try {
-    // Construir URL com query parameters para evitar preflight CORS
+    if (!SCRIPT_URL) {
+      throw new Error('URL do Google Script não configurada. Verifique o arquivo .env');
+    }
+
     const queryParams = new URLSearchParams({ action, ...params });
     const url = `${SCRIPT_URL}?${queryParams.toString()}`;
+
+    console.log(`🔄 [GoogleSheets] Chamando: ${action}`);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -20,14 +30,19 @@ async function makeRequest(action: string, params: any = {}): Promise<GoogleShee
       }
     });
 
+    console.log(`📡 [GoogleSheets] Status: ${response.status}`);
+
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const errorText = await response.text();
+      console.error(`❌ [GoogleSheets] Erro:`, errorText);
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
+    console.log(`✅ [GoogleSheets] Resposta:`, data);
     return data;
   } catch (error) {
-    console.error(`Erro na requisição ${action}:`, error);
+    console.error(`❌ [GoogleSheets] Erro na requisição ${action}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro na requisição'
@@ -192,5 +207,13 @@ export const googleSheetsService = {
 
   async getAnalysts(): Promise<GoogleSheetsResponse> {
     return makeRequest('getAnalysts');
+  },
+
+  async getUserRole(email: string): Promise<GoogleSheetsResponse> {
+    return makeRequest('getUserRole', { email });
+  },
+
+  async getUserById(id: string): Promise<GoogleSheetsResponse> {
+    return makeRequest('getUserRole', { email: id });
   }
 };

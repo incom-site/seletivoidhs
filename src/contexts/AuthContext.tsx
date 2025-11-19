@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { googleSheetsService } from '../services/googleSheets';
 
 export interface User {
   id: string;
@@ -6,7 +7,7 @@ export interface User {
   name: string;
   role: 'admin' | 'analista' | 'entrevistador';
   active: boolean;
-  password?: string; // Para autenticação básica
+  password?: string;
 }
 
 interface AuthContextType {
@@ -21,163 +22,61 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Serviço para comunicação com Google Sheets
-class GoogleSheetsService {
-  private scriptUrl: string;
+function normalizeRole(role: string): 'admin' | 'analista' | 'entrevistador' {
+  const normalized = String(role || '').toLowerCase().trim();
 
-  constructor(scriptUrl: string) {
-    this.scriptUrl = scriptUrl;
-  }
+  if (normalized === 'admin' || normalized === 'administrador') return 'admin';
+  if (normalized === 'analista') return 'analista';
+  if (normalized === 'entrevistador') return 'entrevistador';
 
-  async fetchData(action: string, data?: any): Promise<any> {
-    try {
-      if (!this.scriptUrl) {
-        throw new Error('URL do Google Script não configurada. Verifique o arquivo .env');
-      }
-
-      const url = new URL(this.scriptUrl);
-      url.searchParams.append('action', action);
-
-      if (data) {
-        Object.keys(data).forEach(key => {
-          url.searchParams.append(key, String(data[key]));
-        });
-      }
-
-      console.log('🔄 Chamando Google Apps Script:', url.toString());
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        mode: 'cors',
-        redirect: 'follow',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-
-      console.log('📡 Resposta recebida - Status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Erro na resposta:', errorText);
-        throw new Error(`Erro HTTP ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ Dados recebidos:', result);
-      return result;
-    } catch (error) {
-      console.error('❌ Erro na comunicação com Google Apps Script:', error);
-      console.error('🔍 URL configurada:', this.scriptUrl);
-      console.error('🔍 Action:', action);
-      console.error('🔍 Data:', data);
-      throw error;
-    }
-  }
-
-  async getUserByEmail(email: string): Promise<User | null> {
-    console.log('═'.repeat(60));
-    console.log('🔎 getUserByEmail - INICIANDO');
-    console.log('📧 Email solicitado:', email);
-    console.log('═'.repeat(60));
-
-    const result = await this.fetchData('getUserRole', { email });
-    console.log('📥 getUserByEmail - Resultado COMPLETO:', JSON.stringify(result, null, 2));
-
-    // Verificar estrutura do resultado
-    if (!result) {
-      console.error('❌ Resultado é null ou undefined');
-      return null;
-    }
-
-    if (!result.success) {
-      console.error('❌ result.success é false');
-      console.error('   Error:', result.error);
-      return null;
-    }
-
-    if (!result.data) {
-      console.error('❌ result.data é null ou undefined');
-      console.error('   Isso significa que getUserRole retornou { role: null, user: null }');
-      console.error('   Possíveis causas:');
-      console.error('   1. Email não encontrado na planilha USUARIOS');
-      console.error('   2. Usuário está inativo');
-      console.error('   3. Erro ao ler a planilha');
-      return null;
-    }
-
-    // Google Apps Script retorna { success: true, data: { role: ..., user: {...} } }
-    const userRoleData = result.data;
-    console.log('📦 getUserByEmail - Data extraído:', JSON.stringify(userRoleData, null, 2));
-
-    // Verificar se user existe em data
-    if (!userRoleData.user) {
-      console.error('❌ userRoleData.user não encontrado');
-      console.error('   Data recebido:', JSON.stringify(userRoleData, null, 2));
-      console.error('   Verifique se o usuário existe na planilha USUARIOS');
-      console.error('   Email buscado:', email);
-      return null;
-    }
-
-    const userData = userRoleData.user;
-    console.log('👤 getUserByEmail - userData extraído:', JSON.stringify(userData, null, 2));
-
-    const user = {
-      id: userData.email,
-      email: userData.email,
-      name: userData.name || userData.nome || userData.email,
-      role: userData.role,
-      active: true,
-      password: ''
-    };
-
-    console.log('✅ getUserByEmail - User FINAL:', JSON.stringify(user, null, 2));
-    console.log('🎭 getUserByEmail - ROLE:', user.role, '(tipo:', typeof user.role, ')');
-    console.log('═'.repeat(60));
-
-    return user;
-  }
-
-  async getUserById(id: string): Promise<User | null> {
-    const result = await this.fetchData('getUserRole', { email: id });
-    console.log('📥 getUserById - Resultado COMPLETO:', JSON.stringify(result, null, 2));
-
-    if (result && result.success && result.data) {
-      // Google Apps Script retorna { success: true, data: { role: ..., user: {...} } }
-      const userRoleData = result.data;
-      console.log('📦 getUserById - Data extraído:', JSON.stringify(userRoleData, null, 2));
-
-      // Extrair o objeto user de dentro de data
-      const userData = userRoleData.user;
-
-      if (!userData) {
-        console.error('❌ getUserById - user não encontrado em data');
-        return null;
-      }
-
-      console.log('👤 getUserById - userData extraído:', JSON.stringify(userData, null, 2));
-
-      const user = {
-        id: userData.email,
-        email: userData.email,
-        name: userData.name || userData.nome || userData.email,
-        role: userData.role,
-        active: true
-      };
-
-      console.log('✅ getUserById - User FINAL:', JSON.stringify(user, null, 2));
-      console.log('🎭 getUserById - ROLE:', user.role, '(tipo:', typeof user.role, ')');
-
-      return user;
-    }
-
-    console.error('❌ getUserById - Sem resultado válido');
-    return null;
-  }
+  console.warn(`⚠️ Role desconhecido: "${role}", usando "analista" como padrão`);
+  return 'analista';
 }
 
-const SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwbr9Vm-EJxPTxGEP12UtwWfeKTGU1LsCjnHxQzkY8a9AOOozLNeDKGcflIknT5_FOq/exec';
-const sheetsService = new GoogleSheetsService(SCRIPT_URL);
+async function getUserByEmail(email: string): Promise<User | null> {
+  console.log('═'.repeat(60));
+  console.log('🔎 [AuthContext] Buscando usuário:', email);
+  console.log('═'.repeat(60));
+
+  const result = await googleSheetsService.getUserRole(email);
+  console.log('📥 [AuthContext] Resposta:', JSON.stringify(result, null, 2));
+
+  if (!result || !result.success) {
+    console.error('❌ [AuthContext] Falha na busca:', result?.error);
+    return null;
+  }
+
+  if (!result.data) {
+    console.error('❌ [AuthContext] Sem dados retornados');
+    return null;
+  }
+
+  const userRoleData = result.data;
+  const userData = userRoleData.user;
+
+  if (!userData) {
+    console.error('❌ [AuthContext] Usuário não encontrado');
+    return null;
+  }
+
+  const user: User = {
+    id: userData.email || userData.Email,
+    email: userData.email || userData.Email,
+    name: userData.name || userData.Nome || userData.email || userData.Email,
+    role: normalizeRole(userData.role || userData.Role),
+    active: true
+  };
+
+  console.log('✅ [AuthContext] Usuário processado:', JSON.stringify(user, null, 2));
+  console.log('🎭 [AuthContext] Role normalizado:', user.role);
+  console.log('═'.repeat(60));
+
+  return user;
+}
+
+async function getUserById(id: string): Promise<User | null> {
+  return getUserByEmail(id);
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -192,17 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       const storedUser = localStorage.getItem('currentUser');
-      
+
       if (storedUser) {
         const userData: User = JSON.parse(storedUser);
-        
-        // Verificar se o usuário ainda existe/está ativo
-        const freshUser = await sheetsService.getUserById(userData.id);
-        
+
+        const freshUser = await getUserById(userData.id);
+
         if (freshUser && freshUser.active) {
           setUser(freshUser);
         } else {
-          // Usuário não existe mais ou está inativo
           localStorage.removeItem('currentUser');
           setUser(null);
         }
@@ -210,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       }
     } catch (error) {
-      console.error('Erro ao verificar usuário armazenado:', error);
+      console.error('❌ [AuthContext] Erro ao verificar usuário armazenado:', error);
       localStorage.removeItem('currentUser');
       setUser(null);
     } finally {
@@ -223,12 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
 
       console.log('═'.repeat(60));
-      console.log('🔐 INICIANDO LOGIN');
+      console.log('🔐 [AuthContext] INICIANDO LOGIN');
       console.log('═'.repeat(60));
       console.log('📧 Email:', email);
 
-      const userData = await sheetsService.getUserByEmail(email.toLowerCase().trim());
-      console.log('📥 Dados brutos do Google Sheets:', JSON.stringify(userData, null, 2));
+      const userData = await getUserByEmail(email.toLowerCase().trim());
 
       if (!userData) {
         throw new Error('Usuário não encontrado');
@@ -238,40 +134,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Usuário inativo');
       }
 
-      // CRÍTICO: Garantir que o role está limpo e em lowercase
-      const cleanRole = String(userData.role).toLowerCase().trim();
-
-      const userWithoutPassword: User = {
-        id: userData.email,
-        email: userData.email,
-        name: userData.name,
-        role: cleanRole as 'admin' | 'analista' | 'entrevistador',
-        active: userData.active
-      };
-
       console.log('═'.repeat(60));
-      console.log('✅ USUÁRIO PROCESSADO');
+      console.log('✅ [AuthContext] LOGIN BEM-SUCEDIDO');
       console.log('═'.repeat(60));
-      console.log('User completo:', JSON.stringify(userWithoutPassword, null, 2));
-      console.log('🎭 Role FINAL:', `"${userWithoutPassword.role}"`);
-      console.log('📏 Tamanho:', userWithoutPassword.role.length);
-      console.log('🔤 Tipo:', typeof userWithoutPassword.role);
-      console.log('🔢 Bytes:', Array.from(userWithoutPassword.role).map(c => c.charCodeAt(0)).join(', '));
-      console.log('');
-      console.log('🧪 TESTES:');
-      console.log('  role === "admin":', userWithoutPassword.role === 'admin');
-      console.log('  role === "analista":', userWithoutPassword.role === 'analista');
-      console.log('  role === "entrevistador":', userWithoutPassword.role === 'entrevistador');
+      console.log('User:', JSON.stringify(userData, null, 2));
+      console.log('🎭 Role:', userData.role);
+      console.log('🧪 Testes:');
+      console.log('  role === "admin":', userData.role === 'admin');
+      console.log('  role === "analista":', userData.role === 'analista');
+      console.log('  role === "entrevistador":', userData.role === 'entrevistador');
       console.log('═'.repeat(60));
 
-      setUser(userWithoutPassword);
-      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-
-      console.log('💾 Salvo no localStorage');
-      console.log('═'.repeat(60));
+      setUser(userData);
+      localStorage.setItem('currentUser', JSON.stringify(userData));
 
     } catch (error) {
-      console.error('❌ Erro no login:', error);
+      console.error('❌ [AuthContext] Erro no login:', error);
       throw error;
     } finally {
       setLoading(false);
