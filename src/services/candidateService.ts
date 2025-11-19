@@ -294,19 +294,34 @@ export const candidateService = {
     pageSize: number = 50
   ): Promise<PaginatedResponse<Candidate>> {
     try {
+      console.log('═══════════════════════════════════════════════════');
       console.log('🔍 [getUnassignedCandidates] Iniciando busca...');
       const allData = await sheetsService.getCandidates();
       console.log('📊 [getUnassignedCandidates] Total de candidatos:', allData.length);
 
-      const unassignedData = allData.filter(item => {
+      if (allData.length > 0) {
+        console.log('👤 [getUnassignedCandidates] Exemplo do primeiro candidato (raw):');
+        console.log('   - NOMECOMPLETO:', allData[0].NOMECOMPLETO);
+        console.log('   - CPF:', allData[0].CPF);
+        console.log('   - assigned_to:', allData[0].assigned_to);
+        console.log('   - Analista:', allData[0].Analista);
+        console.log('   - Tipo assigned_to:', typeof allData[0].assigned_to);
+        console.log('   - Tipo Analista:', typeof allData[0].Analista);
+      }
+
+      const unassignedData = allData.filter((item, index) => {
         const assignedTo = item.assigned_to || item.Analista;
         const isUnassigned = !assignedTo || assignedTo === '' || assignedTo === 'null' || assignedTo === 'undefined';
-        if (isUnassigned && allData.indexOf(item) < 3) {
-          console.log(`✅ Candidato não alocado [${allData.indexOf(item) + 1}]:`, item.NOMECOMPLETO, '| assigned_to:', item.assigned_to, '| Analista:', item.Analista);
+
+        if (index < 5) {
+          console.log(`🔍 Candidato ${index + 1}: ${item.NOMECOMPLETO}`);
+          console.log(`   assigned_to: "${assignedTo}" | isUnassigned: ${isUnassigned}`);
         }
+
         return isUnassigned;
       });
       console.log('📊 [getUnassignedCandidates] Candidatos não alocados:', unassignedData.length);
+      console.log('═══════════════════════════════════════════════════');
 
       // Verificar IDs duplicados
       const ids = unassignedData.map(c => c.id);

@@ -21,7 +21,11 @@ function AssignmentPanel({ adminId, onAssignmentComplete }: AssignmentPanelProps
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    console.log('🔄 AssignmentPanel - Iniciando carregamento');
+    console.log('═══════════════════════════════════════════════════');
+    console.log('🔄 [AssignmentPanel] useEffect DISPARADO');
+    console.log('📄 [AssignmentPanel] Página atual:', page);
+    console.log('👤 [AssignmentPanel] AdminId:', adminId);
+    console.log('═══════════════════════════════════════════════════');
     loadAnalysts();
     loadUnassignedCandidates();
   }, [page]);
@@ -69,15 +73,30 @@ function AssignmentPanel({ adminId, onAssignmentComplete }: AssignmentPanelProps
 
   async function loadUnassignedCandidates() {
     try {
+      console.log('🔵 [AssignmentPanel] loadUnassignedCandidates INICIADO');
+      console.log('📄 [AssignmentPanel] Página:', page);
       setLoading(true);
+
       const response = await candidateService.getUnassignedCandidates(page, 50);
+
+      console.log('✅ [AssignmentPanel] Resposta recebida:', response);
+      console.log('📊 [AssignmentPanel] Total de candidatos na resposta:', response.data.length);
+      console.log('📄 [AssignmentPanel] Total de páginas:', response.totalPages);
+      console.log('📋 [AssignmentPanel] Count:', response.count);
+
+      if (response.data.length > 0) {
+        console.log('👤 [AssignmentPanel] Primeiro candidato:', response.data[0]);
+      }
+
       setUnassignedCandidates(response.data);
       setTotalPages(response.totalPages);
     } catch (error) {
-      console.error('Erro ao carregar candidatos:', error);
+      console.error('❌ [AssignmentPanel] Erro ao carregar candidatos:', error);
+      console.error('❌ [AssignmentPanel] Stack:', error instanceof Error ? error.stack : 'N/A');
       setError('Erro ao carregar candidatos não alocados.');
     } finally {
       setLoading(false);
+      console.log('🏁 [AssignmentPanel] loadUnassignedCandidates FINALIZADO');
     }
   }
 
