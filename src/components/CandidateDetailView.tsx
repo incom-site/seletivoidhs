@@ -50,9 +50,10 @@ export default function CandidateDetailView({ candidate, onClose }: CandidateDet
       VAGAPCD: 'VAGA PCD',
       LAUDOMEDICO: 'LAUDO MÉDICO',
       
-      // Área e Cargo
+      // Área e Cargo - ATUALIZADO
       AREAATUACAO: 'ÁREA DE ATUAÇÃO',
-      CARGOPRETENDIDO: 'CARGO PRETENDIDO',
+      CARGOADMIN: 'CARGO ADMINISTRATIVO', // NOVO CAMPO
+      CARGOASSIS: 'CARGO ASSISTENCIAL',   // NOVO CAMPO
       
       // Documentos
       CURRICULOVITAE: 'CURRÍCULO VITAE',
@@ -62,7 +63,8 @@ export default function CandidateDetailView({ candidate, onClose }: CandidateDet
       DIPLOMACERTIFICADO: 'DIPLOMA/CERTIFICADO',
       DOCUMENTOSCONSELHO: 'DOCUMENTOS DO CONSELHO',
       EXPERIENCIAPROFISSIONAL: 'EXPERIÊNCIA PROFISSIONAL',
-    
+      RESERVISTA: 'RESERVISTA',
+      CARTAOSUS: 'CARTÃO SUS',
       
       // Campos de sistema
       Status: 'STATUS',
@@ -89,7 +91,7 @@ export default function CandidateDetailView({ candidate, onClose }: CandidateDet
     })).filter(field => field.value !== null);
   };
 
-  // Definindo as seções com as NOVAS colunas
+  // Definindo as seções com as NOVAS colunas - ATUALIZADO
   const personalFields = createOrderedFields([
     'NOMECOMPLETO', 
     'NOMESOCIAL', 
@@ -100,7 +102,8 @@ export default function CandidateDetailView({ candidate, onClose }: CandidateDet
 
   const areaCargoFields = createOrderedFields([
     'AREAATUACAO',
-    'CARGOPRETENDIDO'
+    'CARGOADMIN',   // SUBSTITUI CARGOPRETENDIDO
+    'CARGOASSIS'    // NOVO CAMPO ADICIONADO
   ]);
 
   const documentosFields = createOrderedFields([
@@ -109,7 +112,9 @@ export default function CandidateDetailView({ candidate, onClose }: CandidateDet
     'COPIACPF',
     'DIPLOMACERTIFICADO',
     'DOCUMENTOSCONSELHO',
-    'EXPERIENCIAPROFISSIONAL'
+    'EXPERIENCIAPROFISSIONAL',
+    'RESERVISTA',
+    'CARTAOSUS'
   ]);
 
   const systemFields = createOrderedFields([
@@ -135,7 +140,11 @@ export default function CandidateDetailView({ candidate, onClose }: CandidateDet
   };
 
   const getCandidateName = () => {
-    return candidate.NOMECOMPLETO || 'Candidato';
+    return candidate.NOMECOMPLETO || candidate.nomeCompleto || candidate.NomeCompleto || 'Nome não informado';
+  };
+
+  const getSocialName = () => {
+    return candidate.NOMESOCIAL || candidate.nome_social || null;
   };
 
   const getCandidateIdentifier = () => {
@@ -148,6 +157,11 @@ export default function CandidateDetailView({ candidate, onClose }: CandidateDet
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">{getCandidateName()}</h2>
+            {getSocialName() && (
+              <p className="text-blue-100 text-sm mt-1">
+                Nome Social: {getSocialName()}
+              </p>
+            )}
             <p className="text-blue-100 text-sm mt-1">
               {getCandidateIdentifier()}
             </p>
@@ -221,3 +235,4 @@ export default function CandidateDetailView({ candidate, onClose }: CandidateDet
     </div>
   );
 }
+
