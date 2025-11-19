@@ -10,7 +10,8 @@ interface Candidate {
   CPF?: string;
   NOMESOCIAL?: string;
   AREAATUACAO?: string;
-  CARGOPRETENDIDO?: string;
+  CARGOADMIN?: string;
+  CARGOASSIS?: string;
   VAGAPCD?: string;
 }
 
@@ -110,9 +111,11 @@ export default function ScreeningModal({
       if (classificationStatus === 'classificado') {
         screeningData.capacidade_tecnica = technicalEvaluation.capacidade_tecnica;
         screeningData.experiencia = technicalEvaluation.experiencia;
+        screeningData.pontuacao_triagem = technicalEvaluation.capacidade_tecnica + technicalEvaluation.experiencia;
         console.log('✅ Avaliação técnica:', {
           capacidade: screeningData.capacidade_tecnica,
-          experiencia: screeningData.experiencia
+          experiencia: screeningData.experiencia,
+          total: screeningData.pontuacao_triagem
         });
       }
 
@@ -297,7 +300,7 @@ export default function ScreeningModal({
   };
 
   const getCargoPretendido = () => {
-    return candidate.CARGOPRETENDIDO || 'Não informado';
+    return [candidate.CARGOADMIN, candidate.CARGOASSIS].filter(Boolean).join(' | ') || 'Não informado';
   };
 
   const getVagaPCD = () => {
