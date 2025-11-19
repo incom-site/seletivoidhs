@@ -120,7 +120,7 @@ export default function InterviewEvaluationForm({
           <div>
             <h2 className="text-xl font-bold text-gray-800">Avaliação de Entrevista</h2>
             <p className="text-sm text-gray-600 mt-1">
-              {candidate.NOMECOMPLETO} - {candidate.CARGOPRETENDIDO}
+              {candidate.NOMECOMPLETO} - {[candidate.CARGOADMIN, candidate.CARGOASSIS].filter(Boolean).join(' | ') || 'Não informado'}
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -141,7 +141,7 @@ export default function InterviewEvaluationForm({
                 <span className="font-medium">CPF:</span> {candidate.CPF}
               </div>
               <div>
-                <span className="font-medium">Cargo:</span> {candidate.CARGOPRETENDIDO}
+                <span className="font-medium">Cargos:</span> {[candidate.CARGOADMIN, candidate.CARGOASSIS].filter(Boolean).join(' | ') || 'Não informado'}
               </div>
               <div>
                 <span className="font-medium">PCD:</span> {candidate.VAGAPCD === 'Sim' ? 'Sim' : 'Não'}
