@@ -210,7 +210,10 @@ export const googleSheetsService = {
   },
 
   async getUserRole(email: string): Promise<GoogleSheetsResponse> {
-    return makeRequest('getUserRole', { email });
+    console.log('🔍 [GoogleSheets] getUserRole chamado com email:', email);
+    const result = await makeRequest('getUserRole', { email });
+    console.log('📥 [GoogleSheets] getUserRole retornou:', JSON.stringify(result, null, 2));
+    return result;
   },
 
   async getUserById(id: string): Promise<GoogleSheetsResponse> {
