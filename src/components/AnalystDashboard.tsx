@@ -40,14 +40,14 @@ export default function AnalystDashboard({ onCandidateTriaged }: AnalystDashboar
     try {
       setLoading(true);
       console.log('🔄 Carregando candidatos para analista:', user.id);
-      
-      const response = await candidateService.getCandidates(1, 100, {
+
+      const response = await candidateService.getCandidates(1, 10000, {
         assignedTo: user.id,
       });
-      
+
       console.log('📊 Candidatos carregados:', response.data);
       setCandidates(response.data);
-      
+
       if (response.data.length > 0 && !selectedCandidate) {
         setSelectedCandidate(response.data[0]);
       }
@@ -174,8 +174,8 @@ export default function AnalystDashboard({ onCandidateTriaged }: AnalystDashboar
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 overflow-y-auto">
-      <div className="bg-white border-b px-6 py-4">
+    <div className="flex flex-col h-screen bg-gray-50">
+      <div className="bg-white border-b px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Meus Candidatos</h1>
@@ -228,10 +228,13 @@ export default function AnalystDashboard({ onCandidateTriaged }: AnalystDashboar
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="w-80 bg-white border-r overflow-auto">
-          <div className="p-4">
-            <h2 className="font-semibold text-gray-800 mb-4">Lista de Candidatos</h2>
+      <div className="flex flex-1 overflow-hidden">
+        <div className="w-80 bg-white border-r flex flex-col flex-shrink-0">
+          <div className="p-4 border-b flex-shrink-0">
+            <h2 className="font-semibold text-gray-800">Lista de Candidatos</h2>
+            <p className="text-xs text-gray-600 mt-1">Total: {candidates.length}</p>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-2">
               {candidates.map(candidate => (
                 <div
@@ -260,27 +263,27 @@ export default function AnalystDashboard({ onCandidateTriaged }: AnalystDashboar
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {selectedCandidate ? (
             <>
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-y-auto">
                 <DocumentViewer candidate={selectedCandidate} />
               </div>
 
-              <div className="bg-white border-t p-4">
+              <div className="bg-white border-t p-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2">
                     <button
                       onClick={moveToPrevious}
                       disabled={!selectedCandidate || candidates.findIndex(c => c.id === selectedCandidate.id) === 0}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Anterior
                     </button>
                     <button
                       onClick={moveToNext}
                       disabled={!selectedCandidate || candidates.findIndex(c => c.id === selectedCandidate.id) === candidates.length - 1}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Próximo
                     </button>
@@ -290,7 +293,7 @@ export default function AnalystDashboard({ onCandidateTriaged }: AnalystDashboar
                     <button
                       onClick={() => setShowScreeningModal(true)}
                       disabled={!selectedCandidate}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       <ClipboardCheck className="w-4 h-4" />
                       Iniciar Triagem
@@ -298,7 +301,7 @@ export default function AnalystDashboard({ onCandidateTriaged }: AnalystDashboar
                     <button
                       onClick={handleReview}
                       disabled={!selectedCandidate}
-                      className="px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 flex items-center gap-2"
+                      className="px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       <Eye className="w-4 h-4" />
                       Revisar
