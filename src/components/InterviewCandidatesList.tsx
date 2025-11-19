@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Calendar, Loader2, UserPlus } from 'lucide-react';import { useState, useEffect } from 'react';
 import { Calendar, Loader2, UserPlus } from 'lucide-react';
 import type { Candidate } from '../types/candidate';
 import { useAuth } from '../contexts/AuthContext';
@@ -241,7 +242,7 @@ export default function InterviewCandidatesList() {
                     {candidate.NOMESOCIAL || '-'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {candidate.CARGOPRETENDIDO || 'Não informado'}
+                    {[candidate.CARGOADMIN, candidate.CARGOASSIS].filter(Boolean).join(' | ') || 'Não informado'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 font-mono">
                     {candidate.CPF || 'Não informado'}
