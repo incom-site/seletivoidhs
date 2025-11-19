@@ -11,7 +11,8 @@ import {
   AlertCircle,
   User,
   Stethoscope,
-  Briefcase
+  Briefcase,
+  ShieldCheck
 } from 'lucide-react';
 
 interface DocumentViewerProps {
@@ -79,11 +80,23 @@ export default function DocumentViewer({ candidate, onFocusDocument }: DocumentV
       url: candidate.EXPERIENCIAPROFISSIONAL,
       icon: <Briefcase className="w-5 h-5" /> 
     },
-    { 
-      key: 'laudo_medico', 
-      label: 'Laudo Médico', 
+    {
+      key: 'laudo_medico',
+      label: 'Laudo Médico',
       url: candidate.LAUDOMEDICO,
-      icon: <Stethoscope className="w-5 h-5" /> 
+      icon: <Stethoscope className="w-5 h-5" />
+    },
+    {
+      key: 'reservista',
+      label: 'Reservista',
+      url: candidate.RESERVISTA,
+      icon: <ShieldCheck className="w-5 h-5" />
+    },
+    {
+      key: 'cartao_sus',
+      label: 'Cartão SUS',
+      url: candidate.CARTAOSUS,
+      icon: <CreditCard className="w-5 h-5" />
     }
   ];
 
@@ -136,6 +149,18 @@ export default function DocumentViewer({ candidate, onFocusDocument }: DocumentV
   const selectedDocument = availableDocs.find(d => d.key === selectedDoc);
   const processedFiles = selectedDocument?.url ? processMultipleUrls(selectedDocument.url) : [];
 
+  // Debug: Log para verificar URLs processadas
+  useEffect(() => {
+    if (selectedDocument) {
+      console.log('📄 Documento selecionado:', selectedDocument.label);
+      console.log('📄 URL bruta:', selectedDocument.url);
+      console.log('📄 Arquivos processados:', processedFiles.length);
+      processedFiles.forEach((file, idx) => {
+        console.log(`  ${idx + 1}. Tipo: ${file.type}, URL: ${file.displayUrl}`);
+      });
+    }
+  }, [selectedDoc, selectedDocument]);
+
   // Função para obter ícone baseado no tipo de arquivo
   const getFileIcon = (fileType: string) => {
     switch (fileType) {
@@ -170,43 +195,50 @@ export default function DocumentViewer({ candidate, onFocusDocument }: DocumentV
     }
   };
 
+  // Função para renderizar os cargos - NOVA
+  const renderCargos = () => {
+    const cargos = [];
+    if (candidate.CARGOADMIN) cargos.push(`Admin: ${candidate.CARGOADMIN}`);
+    if (candidate.CARGOASSIS) cargos.push(`Assis: ${candidate.CARGOASSIS}`);
+    
+    return cargos.length > 0 ? cargos.join(' | ') : 'Não informado';
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-50">
-      <div className="p-4 bg-white border-b border-slate-200">
-        <div className="mb-4">
-          <h2 className="text-xl font-bold text-slate-800">{candidate.NOMECOMPLETO || candidate.name}</h2>
+      <div className="p-3 bg-white border-b border-slate-200 flex-shrink-0">
+        <div className="mb-3">
+          <h2 className="text-lg font-bold text-slate-800">{candidate.NOMECOMPLETO || candidate.name}</h2>
           {candidate.NOMESOCIAL && (
-            <p className="text-sm text-slate-600 mt-1">Nome Social: {candidate.NOMESOCIAL}</p>
+            <p className="text-xs text-slate-600 mt-0.5">Nome Social: {candidate.NOMESOCIAL}</p>
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4 p-3 bg-slate-50 rounded-lg">
+        <div className="grid grid-cols-2 gap-3 mb-3 p-2.5 bg-slate-50 rounded text-xs">
           <div>
-            <p className="text-xs text-slate-500 uppercase font-semibold">Inscrição</p>
-            <p className="text-sm text-slate-800 font-medium">{candidate.registration_number}</p>
+            <p className="text-slate-500 uppercase font-semibold mb-0.5">Inscrição</p>
+            <p className="text-slate-800 font-medium">{candidate.registration_number}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-semibold">CPF</p>
-            <p className="text-sm text-slate-800 font-medium">{candidate.CPF}</p>
+            <p className="text-slate-500 uppercase font-semibold mb-0.5">CPF</p>
+            <p className="text-slate-800 font-medium">{candidate.CPF}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-semibold">Área de Atuação</p>
-            <p className="text-sm text-slate-800 font-medium">{candidate.AREAATUACAO}</p>
+            <p className="text-slate-500 uppercase font-semibold mb-0.5">Área de Atuação</p>
+            <p className="text-slate-800 font-medium">{candidate.AREAATUACAO}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-semibold">Cargo Pretendido</p>
-            <p className="text-sm text-slate-800 font-medium">{candidate.CARGOPRETENDIDO}</p>
+            <p className="text-slate-500 uppercase font-semibold mb-0.5">Vaga PCD</p>
+            <p className="text-slate-800 font-medium">{candidate.VAGAPCD || 'Não'}</p>
           </div>
-          <div>
-            <p className="text-xs text-slate-500 uppercase font-semibold">Vaga PCD</p>
-            <p className="text-sm text-slate-800 font-medium">{candidate.VAGAPCD || 'Não'}</p>
+          <div className="col-span-2">
+            <p className="text-slate-500 uppercase font-semibold mb-0.5">Cargos</p>
+            <p className="text-slate-800 font-medium">{renderCargos()}</p>
           </div>
-        
         </div>
 
-        <div className="mb-3">
-          <h3 className="text-sm font-bold text-slate-700 mb-2">Documentos</h3>
-          <p className="text-xs text-slate-600">
+        <div className="mb-2">
+          <p className="text-xs text-slate-600 font-medium">
             {availableDocs.length} documento(s) disponível(s)
           </p>
         </div>
@@ -216,40 +248,41 @@ export default function DocumentViewer({ candidate, onFocusDocument }: DocumentV
             <button
               key={doc.key}
               onClick={() => handleDocumentSelect(doc.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 transition-all whitespace-nowrap text-xs ${
                 selectedDoc === doc.key
                   ? 'bg-blue-600 text-white border-blue-600 shadow-md'
                   : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400 hover:bg-blue-50'
               } ${doc.isPrimary ? 'font-semibold border-blue-300' : ''}`}
             >
-              {doc.icon}
-              <span className="text-sm">{doc.label}</span>
+              <span className="w-4 h-4">{doc.icon}</span>
+              <span>{doc.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Área principal de visualização */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4">
         {selectedDocument ? (
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden h-full">
-            <div className="p-6 border-b border-slate-200">
+          <div className="bg-white rounded-lg shadow-lg">
+            <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50">
               <div className="flex items-center gap-3">
                 {selectedDocument.icon}
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800">{selectedDocument.label}</h3>
-                  <p className="text-sm text-slate-600 mt-1">
-                    {processedFiles.length} arquivo(s) encontrado(s)
+                  <h3 className="text-lg font-bold text-slate-800">{selectedDocument.label}</h3>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    {processedFiles.length > 0
+                      ? `${processedFiles.length} arquivo(s) encontrado(s)`
+                      : 'Nenhum arquivo encontrado'}
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="p-6">
               <div className="space-y-4">
                 {processedFiles.map((file, idx) => {
                   const fileTypeBadge = getFileTypeBadge(file.type);
-                  
+
                   return (
                     <div
                       key={idx}
@@ -268,7 +301,7 @@ export default function DocumentViewer({ candidate, onFocusDocument }: DocumentV
                               {fileTypeBadge.label}
                             </span>
                           </div>
-                          
+
                           <div className="bg-white p-3 rounded border border-slate-200 mb-3">
                             <a
                               href={file.displayUrl}
@@ -279,7 +312,7 @@ export default function DocumentViewer({ candidate, onFocusDocument }: DocumentV
                               {file.displayUrl}
                             </a>
                           </div>
-                          
+
                           <div className="flex gap-2 flex-wrap">
                             <a
                               href={file.displayUrl}
@@ -318,7 +351,7 @@ export default function DocumentViewer({ candidate, onFocusDocument }: DocumentV
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg shadow-lg py-12">
+          <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-lg py-12">
             <FolderOpen className="w-16 h-16 text-slate-300 mb-4" />
             <p className="text-lg font-medium text-slate-500 mb-2">Nenhum documento disponível</p>
             <p className="text-sm text-slate-400">Este candidato não possui documentos cadastrados</p>
@@ -328,3 +361,4 @@ export default function DocumentViewer({ candidate, onFocusDocument }: DocumentV
     </div>
   );
 }
+
