@@ -60,21 +60,22 @@ async function getUserByEmail(email: string): Promise<User | null> {
     const userRoleData = result.data;
     console.log('📦 [AuthContext] UserRoleData:', JSON.stringify(userRoleData, null, 2));
 
-    const userData = userRoleData.user;
+    // O Google Apps Script retorna os dados diretamente em result.data, não em result.data.user
+    const userData = userRoleData;
 
-    if (!userData) {
-      console.error('❌ [AuthContext] Usuário não encontrado em result.data.user');
+    if (!userData || !userData.email) {
+      console.error('❌ [AuthContext] Usuário não encontrado ou dados inválidos');
       return null;
     }
 
     console.log('👤 [AuthContext] UserData bruto:', JSON.stringify(userData, null, 2));
 
     const user: User = {
-      id: userData.email || userData.Email,
+      id: userData.email || userData.Email || userData.id || userData.ID,
       email: userData.email || userData.Email,
       name: userData.name || userData.Nome || userData.email || userData.Email,
       role: normalizeRole(userData.role || userData.Role),
-      active: true
+      active: userData.active !== false
     };
 
     console.log('✅ [AuthContext] Usuário processado:', JSON.stringify(user, null, 2));
